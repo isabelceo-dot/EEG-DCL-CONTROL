@@ -1,0 +1,93 @@
+from sklearn.decomposition import PCA
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn import decomposition #PCA
+from sklearn.preprocessing import scale
+import pandas as pd # pandas
+import numpy as np
+#import plotly.express as px
+
+import matplotlib.pyplot as plt
+import matplotlib.font_manager
+from matplotlib import style
+
+data_df1 = datafilter_ica_csd.to_data_frame(['F7', 'F3','Fz','F4','F8']).drop(['time'], axis=1)
+data_df2=datafilter_ica_csd.to_data_frame(['T3','T5','T6']).drop(['time'], axis=1)
+data_df3= datafilter_ica_csd.to_data_frame(['P3','Pz','P4']).drop(['time'], axis=1)
+data_df4= datafilter_ica_csd.to_data_frame(['C3','Cz','C4']).drop(['time'], axis=1)
+
+print('----------------------')
+print('Media de cada variable')
+print('----------------------')
+data_df1.mean(axis=0)
+
+print('-------------------------')
+print('Varianza de cada variable')
+print('-------------------------')
+data_df1.var(axis=0)
+
+pca_pipe = make_pipeline(StandardScaler(), PCA())
+pca_pipe.fit(data_df1)
+modelo_pca = pca_pipe.named_steps['pca']
+
+pd.DataFrame(
+    data    = modelo_pca.components_,
+    columns = data_df1.columns,
+    index   = ['PC1', 'PC2', 'PC3','PC4','PC5']
+)
+
+print('----------------------------------------------------')
+print('Porcentaje de varianza explicada por cada componente')
+print('----------------------------------------------------')
+print(modelo_pca.explained_variance_ratio_)
+
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 4))
+ax.bar(
+    x      = np.arange(modelo_pca.n_components_) + 1,
+    height = modelo_pca.explained_variance_ratio_
+)
+
+for x, y in zip(np.arange(len(data_df1.columns)) + 1, modelo_pca.explained_variance_ratio_):
+    label = round(y, 2)
+    ax.annotate(
+        label,
+        (x,y),
+        textcoords="offset points",
+        xytext=(0,10),
+        ha='center'
+    )
+
+ax.set_xticks(np.arange(modelo_pca.n_components_) + 1)
+ax.set_ylim(0, 1.1)
+ax.set_title('Porcentaje de varianza explicada por cada componente')
+ax.set_xlabel('Componente principal')
+ax.set_ylabel('Por. varianza explicada')
+
+prop_varianza_acum = modelo_pca.explained_variance_ratio_.cumsum()
+print('------------------------------------------')
+print('Porcentaje de varianza explicada acumulada')
+print('------------------------------------------')
+print(prop_varianza_acum)
+
+fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(6, 4))
+ax.plot(
+    np.arange(len(data_df1.columns)) + 1,
+    prop_varianza_acum,
+    marker = 'o'
+)
+
+for x, y in zip(np.arange(len(data_df1.columns)) + 1, prop_varianza_acum):
+    label = round(y, 2)
+    ax.annotate(
+        label,
+        (x,y),
+        textcoords="offset points",
+        xytext=(0,10),
+        ha='center'
+    )
+    
+ax.set_ylim(0, 1.1)
+ax.set_xticks(np.arange(modelo_pca.n_components_) + 1)
+ax.set_title('Porcentaje de varianza explicada acumulada')
+ax.set_xlabel('Componente principal')
+ax.set_ylabel('Por. varianza acumulada')
