@@ -1,0 +1,19 @@
+epochs_839_910 = mne.Epochs(datafilter_ica_csd, events_array, tmin=3.352, tmax=3.636,
+                            picks= ['F7','F3','Fz','F4','F8','T3','C3' ,'Cz','C4','T4','T5','P3','Pz','P4','T6'],
+                            baseline=None, event_id=1 , event_repeated='drop',preload=True)
+                            
+evoked1 = epochs_839_910[1].average()
+evoked1.plot_topomap(ch_type=None, time_unit='ms')
+
+fmin, fmax = 8, 12
+sfreq = raw.info['sfreq']  # the sampling frequency
+  # exclude the baseline period
+#epochs_314_323.load_data().pick_types(meg=False, eeg=True)  # just keep EEG
+con1, freqs, times, n_epochs, n_tapers = spectral_connectivity(
+  epochs_839_910, method='pli', mode='multitaper', sfreq=250, fmin=fmin, fmax=fmax,
+    faverage=True, tmin=3.352, tmax=3.636, mt_adaptive=False, n_jobs=1)
+ 
+ matriz_con_839_910 = np.reshape(df_con_839_910,(15,15))
+ con_thres1=matriz_con_839_910
+ con_thres1[np.where(con_thres1<threshold)] = 0
+con_thres1[np.where(con_thres1>threshold)] = 1
