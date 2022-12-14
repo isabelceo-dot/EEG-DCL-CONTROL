@@ -1,0 +1,244 @@
+install mne
+install inspect
+install pickle
+install neurokit2
+install pyprep
+install neurokit
+
+import mne
+
+from mne.preprocessing import ICA
+from mne.preprocessing import create_eog_epochs
+from mne.preprocessing import create_ecg_epochs
+from mne.time_frequency import psd_welch
+from mne.channels.montage import get_builtin_montages
+#from mne.connectivity import spectral_connectivity
+from mne.time_frequency import tfr_morlet, psd_multitaper, psd_welch
+#from mne.viz import plot_sensors_connectivity, plot_connectivity_circle
+from mne.preprocessing import peak_finder
+from mne.event import define_target_events
+
+from neurokit.bio.bio_eda import cvxEDA
+from neurokit.statistics import z_score
+
+import matplotlib 
+import matplotlib.pyplot as plt  # mne
+import numpy as np
+import inspect
+import time
+import pickle
+import neurokit2 as nk
+
+raw = mne.io.read_raw_edf("name_of_thesignal.edf",**params_read_raw_edf)
+raw.crop(tmax=60).load_data()
+
+#####Events###########
+
+mapping_events = {1:'frecuente',
+                 
+                  2:'raro'}
+                  
+event_dic = {'frecuente':1, 'raro': 2}
+
+######Creation of the event array
+
+####first column: time shown in the EEG signal by sampling rate
+####second column: no major relevance
+####third column: identifier of the event according to mapping events
+
+events_array= np.array([
+       [672,0,1],
+       [725,0,1],
+       [925,0,1],
+       [977,0,1],
+       [1180,0,1],
+       [1230,0,1],
+       [1432,0,1],
+       [1487,0,1],
+       [1690,0,1],
+       [1740,0,1],
+       [1945,0,1],
+       [1690,0,1],
+       [1992,0,1],
+       [2197,0,1],
+       [2247,0,1],
+       [2450,0,1],
+       [2502,0,1],
+       [2707,0,1],
+       [2757,0,1],
+       [2960,0,2],
+       [2967,0,2],
+       [3215,0,1],
+       [3267,0,1],
+       [3470,0,1],
+       [3520,0,1],
+       [3725,0,1],
+       [3775,0,1],
+       [3980,0,1],
+       [4030,0,1],
+       [4232,0,1],
+       [4282,0,1],
+       [4487,0,1],
+       [4535,0,1],
+       [4742,0,1],
+       [4792,0,1],
+       [4995,0,2],
+       [5005,0,2],
+       [5247,0,1],
+       [5297,0,1],
+       [5502,0,2],
+       [5512,0,2],
+       [5757,0,1],
+       [5807,0,1],
+       [6012,0,2],
+       [6020,0,2],
+       [6267,0,1],
+       [6315,0,1],
+       [6520,0,1],
+       [6572,0,1],
+       [6775,0,1],
+       [6827,0,1],
+       [7027,0,2],
+       [7040,0,2],
+       [7285,0,1],
+       [7335,0,1],
+       [7537,0,1],
+       [7587,0,1],
+       [7795,0,1],
+       [7845,0,1],
+       [1690,0,1],
+       [8045,0,2],
+       [8047,0,2],
+       [8302,0,1],
+       [8352,0,1],
+       [8557,0,1],
+       [8607,0,1],
+       [8812,0,1],
+       [8862,0,1],
+       [9062,0,2],
+       [9072,0,2],
+       [9320,0,1],
+       [9370,0,1],
+       [9575,0,1],
+       [9625,0,1],
+       [9830,0,1],
+       [9877,0,1],
+       [10080,0,1],
+       [10132,0,1],
+       [10337,0,1],
+       [10387,0,1],
+       [10592,0,2],
+       [10600,0,2],
+       [10847,0,1],
+       [10895,0,1],
+       [11097,0,2],
+       [11100,0,2],
+       [11355,0,1],
+       [11407,0,1],
+       [11607,0,2],
+       [11617,0,2],
+       [11865,0,1],
+       [11912,0,1],
+       [12117,0,2],
+       [12125,0,2],
+       [12372,0,1],
+       [12425,0,1],
+       [12627,0,1],
+       [12677,0,1],
+       [12880,0,1],
+       [12932,0,1],
+       [13135,0,1],
+       [13187,0,1],
+       [13390,0,1],
+       [13440,0,1],
+       [13642,0,2],
+       [13652,0,2],
+       [13897,0,1],
+       [13947,0,1],
+       [14152,0,1],
+       [14205,0,1],
+       [14410,0,1],
+       [14457,0,1],
+       [14662,0,1],
+       [14715,0,1],
+       [14915,0,1],
+       [14967,0,1],
+    
+])
+
+#####Add the events to the signal time*250Hz
+raw.add_events(events_array, stim_channel= 'DC7', replace= True)
+
+mapping= {'FP1-A1': 'Fp1','FP2-A2': 'Fp2','F7-A1' : 'F7','T3-A1' : 'T3', 'T5-A1' : 'T5', 'O1-A1' :'O1',
+          'F3-A1' : 'F3', 'C3-A1': 'C3', 'P3-A1' : 'P3', 'FZ-A1' : 'Fz', 'CZ-A1' : 'Cz',
+           'PZ-A1' : 'Pz', 'F4-A2' : 'F4', 'C4-A2' : 'C4', 'P4-A2' : 'P4','FP2-A2': 'Fp2',
+             'F8-A2' : 'F8' ,'T4-A2':'T4', 'T6-A2' : 'T6','O2-A2' : 'O2'  }
+
+
+raw.rename_channels(mapping=mapping)
+
+montage = mne.channels.make_standard_montage(kind='standard_1020', head_size=0.095)
+print(montage)
+
+mon=raw.set_montage(montage)
+raw.plot_sensors(show_names=True)
+
+######FILTER ALPHA SIGNAL########
+datafilter=raw.copy().filter(8, 12, fir_design='firwin')
+
+from pyprep.find_noisy_channels import NoisyChannels
+NC = NoisyChannels(datafilter)
+NC.find_all_bads(ransac=False)
+print(NC.get_bads())
+datafilter.info["bads"] = NC.get_bads()
+datafilter.interpolate_bads(reset_bads=False, verbose=False)
+
+datafilter.set_eeg_reference('average', projection=True)
+datafilter.apply_proj()
+
+
+datafilter.info['bads'] = ['T4', 'T5', 'O1']
+noise_cov = mne.compute_raw_covariance(
+     datafilter, method=['empirical', 'shrunk'])
+     
+     
+####### ICA FILTER #########
+
+ica             = mne.preprocessing.ICA(n_components            = .99,
+                                            #n_pca_components        = .99,
+                                            #max_pca_components      = None,
+                                            method                  = 'infomax',
+                                            max_iter                = int(3e3),
+                                            noise_cov               = noise_cov,
+                                            random_state            = 12345,)
+picks       = mne.pick_types(datafilter.info,
+                                     eeg = True, # YES EEG
+                                     eog = False # NO EOG
+                                         ) 
+                                      
+ica.fit(datafilter,
+                picks   = picks,
+                decim   = 3,
+                tstep   = 1. # Length of data chunks for artifact rejection in seconds. It only applies if inst is of type Raw.
+               )
+#ica.detect_artifacts(datafilter,
+#                     eog_ch         = ["Fz"],
+ ##                    eog_criterion  = 0.4, # arbitary choice
+  #                   skew_criterion = 2,   # arbitary choice
+  #                   kurt_criterion = 2,   # arbitary choice
+  #                   var_criterion  = 2,   # arbitary choice
+   #                      )
+    
+picks       = mne.pick_types(datafilter.info,
+                             eeg = True, # YES EEG
+                             eog = False # NO EOG
+                             ) 
+datafilter_ica  = ica.apply(datafilter,
+                                  exclude    = ica.exclude,
+                                  )
+                                  
+#####SURFACE LAPLACIA FILTER########
+
+datafilter_ica.interpolate_bads()
+datafilter_ica_csd = mne.preprocessing.compute_current_source_density(datafilter_ica)
+datafilter_ica_csd.plot()
